@@ -2,6 +2,7 @@
 #include <external_dependency.h>
 #include <iostream>
 
+#include <cusp/io/matrix_market.h>
 #include <cusp/csr_matrix.h>
 #include <cusp/print.h>
 
@@ -34,46 +35,10 @@ void times2(int* in, int* out, int dim) {
 
 TEST_LIB_API int doit()
 {
-  cudaFree(0);
-  CHECK_CUDA_ERROR();
-
-  int h_val[DIM];
-  int h_result[DIM];
-
-  for(int i = 0; i < DIM; ++i)
-    h_val[i] = i;
-
-  // Allocate device memory
-  unsigned int size = sizeof(int) * DIM;
-  int* d_val;
-  cudaMalloc((void**)&d_val, size);
-  CHECK_CUDA_ERROR();
-
-  int* d_result;
-  cudaMalloc((void**)&d_result, size);
-  CHECK_CUDA_ERROR();
-
-  // Send input to device
-  cudaMemcpy(d_val, h_val, size, cudaMemcpyHostToDevice);
-  CHECK_CUDA_ERROR();
-
-  // Call the kernel wrapper
-  times2(d_val, d_result, DIM);
-  CHECK_CUDA_ERROR();
-
-  // Get back results
-  cudaMemcpy(h_result, d_result, size, cudaMemcpyDeviceToHost);
-  CHECK_CUDA_ERROR();
-
-  for(int i = 0; i < DIM; ++i)
-    std::cout << h_val[i] << " * " << MULTIPLIER << " = " << h_result[i] << "\n";
-
-  // Free memory
-  cudaFree((void*)d_val);
-  CHECK_CUDA_ERROR();
-
-  cudaFree((void*)d_result);
-  CHECK_CUDA_ERROR();
+	
+	cusp::coo_matrix<int, float, cusp::device_memory> B;
+	cusp::io::read_matrix_market_file(B, "/home/amerlo/workspace/cuda-test/matrix.mm");
+	cusp::print_matrix(B);
 
   return 0;
 }

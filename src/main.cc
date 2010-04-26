@@ -9,6 +9,7 @@
 #include <cuda_runtime.h>
 
 #include "keyword_util.h"
+#include "external_dependency.h"
 
 using namespace std;
 
@@ -104,8 +105,6 @@ void process_keywords(const string& input_file) {
 }
 
 void create_matirx_market(const string& output_file) {
-	// %%MatrixMarket matrix coordinate real general
-
 	ofstream out;
 	string keyword;
 
@@ -118,7 +117,6 @@ void create_matirx_market(const string& output_file) {
 	out << "%%MatrixMarket matrix coordinate real general" << endl;
 	out << K.size() << " " << T.size() << " " << num_values << endl;
 
-	// create sparse matrix
 	int n = 1;
 	for (set<string>::iterator it = K.begin(); it != K.end(); it++) {
 		keyword = *it;
@@ -138,7 +136,6 @@ void create_matirx_market(const string& output_file) {
 		}
 		n++;
 	}
-
 	out.close();
 }
 
@@ -150,8 +147,8 @@ int main(int argc, char **argv) {
 	process_keywords(input_file);
 	create_matirx_market(output_file);
 
-	//CHECK_CUDA_ERROR();
-	//return doit();
+	CHECK_CUDA_ERROR();
+	return doit();
 
 	return 0;
 }

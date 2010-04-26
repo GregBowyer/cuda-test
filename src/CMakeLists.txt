@@ -34,22 +34,15 @@ CUDA_ADD_LIBRARY(test_lib
   DEBUG -g -DDEBUG
   )
 
-# Using the CUDA_COMPILE macro
-set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF)
-set(source_files test_bin.cu)
-CUDA_COMPILE(CUDA_FILES test_bin.cu)
-
+# Then link the shared library to another executable.
 ADD_EXECUTABLE(cuda-test
-  ${CUDA_FILES}
-  ${source_files}
   main.cc
-  external_dependency.h
-  keyword_util.h
   )
+
+# Specify the dependency.
 TARGET_LINK_LIBRARIES(cuda-test
- ${CUDA_LIBRARIES}
- )
+  test_lib
+  )
 
 # Add a special target to clean nvcc generated files.
 CUDA_BUILD_CLEAN_TARGET()
-
