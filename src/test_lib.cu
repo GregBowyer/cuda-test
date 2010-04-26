@@ -2,6 +2,9 @@
 #include <external_dependency.h>
 #include <iostream>
 
+#include <cusp/csr_matrix.h>
+#include <cusp/print.h>
+
 __global__ void times2_kernel(int *in, int *out) {
 
   for (unsigned int i=0;i<blockDim.x;++i) {
