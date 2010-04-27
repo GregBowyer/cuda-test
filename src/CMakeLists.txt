@@ -14,7 +14,6 @@ CUDA_INCLUDE_DIRECTORIES(
 # file to multiple targets.
 set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE OFF)
 
-
 # Anything other than -D or /D is not passed along to nvcc.
 add_definitions(-DMULTIPLIER=2)
 
@@ -29,7 +28,7 @@ CUDA_ADD_LIBRARY(test_lib
   external_dependency.h
   # SHARED
   # STATIC
-  OPTIONS "-DSTUFF=blah blah"
+  OPTIONS ""
   RELEASE --use_fast_math -DNDEBUG
   DEBUG -g -DDEBUG
   )

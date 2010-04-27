@@ -2,7 +2,13 @@
 #define EXTERNDEPENDENCY__H
 
 #include "external_dependency3.h"
+
 typedef unsigned int Size; 
+
+struct Vector {
+	int size;
+	int* values;
+};
 
 #define CHECK_CUDA_ERROR() \
   { \

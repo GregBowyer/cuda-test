@@ -6,60 +6,29 @@
 #include <set>
 #include <math.h>
 
-#include <cuda.h>
-#include <cuda_runtime.h>
-
-#include "keyword_util.h"
 #include "external_dependency.h"
 
 using namespace std;
+
+const char SPACE = ' ';
 
 map<string, int> tokens; // Tokens
 set<string> keywords; // Keywords
 map<string, set<int> > intersections; // intersections between keyword and tokens
 int num_values = 0;
 
-extern int doit();
+extern int covariance(float** A, int* tokens, Vector* intersections, int wT, int wK);
 
-struct Vector {
-	int size;
-	int* values;
-};
+void split(const std::string& line, const char& delimiter, std::vector<std::string>& col) {
+	std::istringstream iss(line);
+	std::string tok;
+	while (std::getline(iss, tok, delimiter)) {
+		if (tok.size() <= 1)
+			continue;
 
-
-int get_intersections(Vector *itrs, int t1, int t2) {
-	int n = 0;
-	Vector k1 = itrs[t1];
-	Vector k2 = itrs[t2];
-	for (int i = 0; i < k1.size; i++) {
-		int *v1 = k1.values;
-		for (int j = 0; j < k2.size; j ++) {
-			int *v2 = k2.values;
-			if (v1[i] == v2[j])
-				n++;
-		}
+		col.push_back(tok);
 	}
-
-	return n;
 }
-
-/*
- int get_intersections (const std::map<string,
-                        std::set<int> >& intersections,
-                        const std::string& t1, const std::string& t2)
-        {
-                int n = 0;
-                const std::set<int>& k1 = intersections.find(t1)->second;
-                const std::set<int>& k2 = intersections.find(t2)->second;
-                for (std::set<int>::iterator it = k1.begin(); it != k1.end(); it++) {
-                        if (k2.count(*it)>0) {
-                                n++;
-                        }
-                }
-
-                return n;
-        }
- */
 
 void process_keywords(const string& input_file) {
 	ifstream in;
@@ -76,7 +45,7 @@ void process_keywords(const string& input_file) {
 	while (!in.eof()) {
 		if (keyword.size() > 0) {
 			vector<string> t;
-			keyword::split(keyword, SPACE, t);
+			split(keyword, SPACE, t);
 			for (unsigned int i = 0; i < t.size(); i++) {
 				if (t[i].size() <= 1) {
 					continue;
@@ -105,7 +74,7 @@ void process_keywords(const string& input_file) {
 		vector<string> t;
 		int c = 0;
 
-		keyword::split(keyword, SPACE, t);
+		split(keyword, SPACE, t);
 		for (unsigned int i = 0; i < t.size(); i++) {
 			if (tokens.count(t[i]) > 0)
 				c++;
@@ -125,7 +94,7 @@ void process_keywords(const string& input_file) {
 		keyword = *it;
 		vector<string> t;
 		set<string> keys;
-		keyword::split(keyword, SPACE, t);
+		split(keyword, SPACE, t);
 		for (unsigned int i = 0; i < t.size(); i++)
 			keys.insert(t[i]);
 
@@ -163,7 +132,7 @@ void create_matirx_market(const string& output_file) {
 		keyword = *it;
 		vector<string> t;
 		set<string> keys;
-		keyword::split(keyword, SPACE, t);
+		split(keyword, SPACE, t);
 		for (unsigned int i = 0; i < t.size(); i++)
 			keys.insert(t[i]);
 
@@ -186,16 +155,15 @@ int main(int argc, char **argv) {
 	string output_file = "/home/amerlo/workspace/cuda-test/matrix.mm";
 
 	process_keywords(input_file);
-	create_matirx_market(output_file);
+	//create_matirx_market(output_file);
 
-	int T = tokens.size();
-	int K = keywords.size();
-	int c = 0; // temp counter
-
-	int tk[T]; // tokens
-	Vector itrs[T]; // intersections
+	int wT = tokens.size();
+	int wK = keywords.size();
+	int tk[wT]; // tokens
+	Vector itrs[wT]; // intersections
 
 	// map token info to c array
+	int c = 0; // temp counter
 	for (std::map<std::string, int>::iterator it = tokens.begin(); it != tokens.end(); it++) {
 		tk[c++] = (float) (*it).second;
 	}
@@ -219,39 +187,17 @@ int main(int argc, char **argv) {
 		itrs[c++] = vec;
 	}
 
-
-	for (int i = 0; i < T; i++) {
-		float t1 = tk[i];
-		for (int j = 0; j < T; j++) {
-			float t2 = tk[j];
-			float v = 0.0;
-			if (i > 0 && j<i) {
-				// already calculated
-			} else {
-				if (i == j) {
-					// calculate diagonal
-					v = ((pow((1-t1/K),2) * t1) + ((pow((-t1/K),2) * (K - t1)))) / K;
-				} else {
-                    float nn = (float) get_intersections(itrs, i, j);
-                    //float nn = 0;
-                    float t00 = -t1/K;
-                    float t01 = 1-t1/K;
-                    float t10 = -t2/K;
-                    float t11 = 1-t2/K;
-                    v = ((nn * t01 * t11)
-                      + ((t1 - nn) * t01 * t10)
-                      + ((t2 - nn) * t00 * t11)
-                      + ((K - (t2 + t1 - nn)) * t00 * t10))
-                      / K;
-				}
-			}
-			cout << i << ", " << j << ", " << v << endl;
-			// A(i, j) = v;
-		}
-	}
+	// allocate host memory for the result
+	float** A = (float**) malloc(sizeof(float) * wT * wT);
 
 	//CHECK_CUDA_ERROR();
-	//return doit();
+	covariance(A, tk, itrs, wT, wK);
+
+	for (int i = 0; i < 3; i++)
+		for (int j = 0; j < 3; j++)
+			printf("%u %f\n", i, A[i][j]);
+
+	free(A);
 
 	return 0;
 }
