@@ -25,14 +25,16 @@ add_definitions(-DMULTIPLIER=2)
 set(BUILD_SHARED_LIBS ON)
 set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE ON)
 CUDA_ADD_LIBRARY(test_lib
-  test_lib.cu
-  external_dependency.h
-  # SHARED
-  # STATIC
-  OPTIONS ""
-  RELEASE --use_fast_math -DNDEBUG
-  DEBUG -g -DDEBUG
-  )
+    test_lib.cu
+    external_dependency.h
+    opts.c
+    opts.h
+    # SHARED
+    # STATIC
+    OPTIONS ""
+    RELEASE --use_fast_math -DNDEBUG
+    DEBUG -g -DDEBUG
+)
 
 # Then link the shared library to another executable.
 ADD_EXECUTABLE(cuda-test

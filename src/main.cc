@@ -7,6 +7,10 @@
 #include <math.h>
 
 #include "external_dependency.h"
+#include <stdlib.h>
+#include <stdio.h>
+
+#include "opts.h"
 
 using namespace std;
 
@@ -198,8 +202,12 @@ void calc_covariance() {
 
 int main(int argc, char **argv) {
 
-	string input_file = "/home/amerlo/workspace/cuda-test/dry_food.txt";
-	string output_file = "/home/amerlo/workspace/cuda-test/matrix.mm";
+    options prog_opts;
+    process_commandline_options(&prog_opts, argc, argv);
+
+	string input_file = prog_opts.input_file;
+    printf("Input file: %s\n", prog_opts.input_file);
+	string output_file = prog_opts.output_file;
 
 	process_keywords(input_file);
 	//create_matirx_market(output_file);
