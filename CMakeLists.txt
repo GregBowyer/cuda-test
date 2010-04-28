@@ -4,6 +4,8 @@
 cmake_minimum_required (VERSION 2.6) 
 project (Cuda) 
 
+include(ExternalProject)
+
 find_package(CUDA QUIET REQUIRED)
 
 # there are problems compiling 64-bit on mac osx.
@@ -15,6 +17,19 @@ if (CMAKE_SYSTEM_NAME MATCHES Darwin)
     set(CMAKE_C_FLAGS -m32) 
     set(CMAKE_CXX_FLAGS -m32)
 endif(CMAKE_SYSTEM_NAME MATCHES Darwin)
+
+ExternalProject_Add(breakpad-lib
+    SVN_REPOSITORY http://google-breakpad.googlecode.com/svn/trunk/
+    # We need to patchup the autotools chain a little, automake 1.11.1
+    # and libtool 2.6.9 are _really_ new and the code builds fine without
+    PATCH_COMMAND /usr/bin/libtoolize --force --copy &&
+        sed -i s/AM_INIT_AUTOMAKE\(subdir-objects\ tar-ustar\ 1.11.1/AM_INIT_AUTOMAKE\(subdir-objects\ tar-ustar\ 1.11/ ./configure.ac
+    CONFIGURE_COMMAND ./configure
+    BUILD_IN_SOURCE 1
+    BUILD_COMMAND make all
+    # No install 
+    INSTALL_COMMAND true
+)
 
 subdirs(
     src

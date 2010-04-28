@@ -3,12 +3,15 @@
 # There are two ways to add include directories to the NVCC command
 # line:
 
+INCLUDE_DIRECTORIES(../breakpad-prefix/src/breakpad/src/)
+LINK_DIRECTORIES(../breakpad-prefix/src/breakpad/src/client/linux/)
+LINK_LIBRARIES(breakpad_client)
 #set(CUDA_PROPAGATE_HOST_FLAGS OFF)
 
 # The cuda_include_directories adds paths to only cuda compilation.
 CUDA_INCLUDE_DIRECTORIES(
   ${CMAKE_CURRENT_SOURCE_DIR}
-  )
+)
 
 # Set CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE when you want to add the same .cu
 # file to multiple targets.
@@ -24,6 +27,10 @@ add_definitions(-DMULTIPLIER=2)
 #  -arch sm_13
 set(BUILD_SHARED_LIBS ON)
 set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE ON)
+
+set(DEBUGGING_SYMBOLS yes)
+set(DEBUG_INFORMATION_FORMAT dwarf)
+
 CUDA_ADD_LIBRARY(test_lib
     test_lib.cu
     external_dependency.h
@@ -39,12 +46,11 @@ CUDA_ADD_LIBRARY(test_lib
 # Then link the shared library to another executable.
 ADD_EXECUTABLE(cuda-test
   main.cc
-  )
+)
 
 # Specify the dependency.
-TARGET_LINK_LIBRARIES(cuda-test
-  test_lib
-  )
+
+TARGET_LINK_LIBRARIES(cuda-test test_lib)
 
 # Add a special target to clean nvcc generated files.
 CUDA_BUILD_CLEAN_TARGET()

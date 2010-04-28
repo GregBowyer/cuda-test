@@ -12,6 +12,9 @@
 
 #include "opts.h"
 
+#include "common/linux/linux_syscall_support.h"
+#include "client/linux/handler/exception_handler.h"
+
 using namespace std;
 
 const char SPACE = ' ';
@@ -211,6 +214,23 @@ void calc_covariance() {
 		printf("%u %f\n", i, result[i]);
 	}
 }
+
+// Setup the airbag
+// google_breakpad::MinidumpCallback to invoke after minidump generation.
+static bool callback(const char *dump_path, const char *id,
+                     void *context,
+                     bool succeeded) {
+  if (succeeded) {
+    printf("dump guid is %s\n", id);
+  } else {
+    printf("dump failed\n");
+  }
+  fflush(stdout);
+
+  return succeeded;
+}
+
+static google_breakpad::ExceptionHandler eh(".", NULL, callback, NULL, true);
 
 int main(int argc, char **argv) {
 
