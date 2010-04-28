@@ -28,7 +28,7 @@ __device__ double get_intersections(int* intr, int t1, int t2, int wI) {
 	return n;
 }
 
-__global__ void calc(float* result, int* tokens, int* intr, int wT, int wK, int wI) {
+__global__ void calc(double* result, int* tokens, int* intr, int wT, int wK, int wI) {
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
 	int j = blockIdx.y * blockDim.y + threadIdx.y;
 	double t1 = (double) tokens[i];
@@ -47,8 +47,8 @@ __global__ void calc(float* result, int* tokens, int* intr, int wT, int wK, int 
 			v = ((nn * t01 * t11) + ((t1 - nn) * t01 * t10) + ((t2 - nn) * t00 * t11) + ((wK - (t2 + t1 - nn)) * t00 * t10)) / wK;
 			//v=nn;
 		}
-		result[i + (j * wT)] = (float) v;
-		result[j + (i * wT)] = (float) v;
+		result[i + (j * wT)] = v;
+		result[j + (i * wT)] = v;
 	}
 }
 
@@ -100,10 +100,9 @@ int covariance(map<string, int> tokens, map<string, set<int> > intersections, in
 
 	// allocate memory for the result
 	//free(*product);
-	Size mem_size_result = sizeof(float) * wT * wT;
-	float* h_result;
-	float* d_result;
-	h_result = (float*) malloc(mem_size_result);
+	Size mem_size_result = sizeof(double) * wT * wT;
+	double* h_result = (double*) malloc(mem_size_result);
+	double* d_result;
 	memset(h_result, 0, mem_size_result);
 	cudaMalloc((void **) &d_result, mem_size_result);
 	cudaMemset(d_result, 0, mem_size_result);
@@ -124,9 +123,9 @@ int covariance(map<string, int> tokens, map<string, set<int> > intersections, in
 	cudaFree(d_Tokens);
 	cudaFree(d_Intr);
 	cudaFree(d_result);
-	free(h_result);
-	//free(h_Tokens);
-	//free(h_Intr);
+	//delete[] h_Tokens;
+	//delete[] h_Intr;
+	//delete[] h_result;
 
 	return 0;
 }

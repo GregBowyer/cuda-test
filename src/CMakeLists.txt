@@ -21,6 +21,7 @@ add_definitions(-DMULTIPLIER=2)
 # CUDA_ADD_LIBRARY.  Remember that BUILD_SHARED_LIBS is only respected by
 # CUDA_ADD_LIBRARY.  If you use CUDA_COMPILE or CUDA_WRAP_SRCS you must specify
 # SHARED or STATIC as a parameter.
+#  -arch sm_13
 set(BUILD_SHARED_LIBS ON)
 set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE ON)
 CUDA_ADD_LIBRARY(test_lib

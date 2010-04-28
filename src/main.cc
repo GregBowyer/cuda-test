@@ -163,6 +163,7 @@ void create_matirx_market(const string& output_file) {
 }
 
 void calc_covariance() {
+	double A[tokens.size()][tokens.size()];
 	int n = 0;
 	double K = (double) keywords.size();
 	for (std::map<std::string, int>::iterator it = tokens.begin(); it != tokens.end(); it++) {
@@ -187,8 +188,8 @@ void calc_covariance() {
 					v = ((nn * t01 * t11) + ((t1 - nn) * t01 * t10) + ((t2 - nn) * t00 * t11) + ((K - (t2 + t1 - nn)) * t00 * t10)) / K;
 				}
 			}
-			//ierr = B->InsertGlobalValues(n, 1, &v, &m);
-
+			//cout << t1 << endl;
+			A[m][n] = v;
 			m++;
 		}
 		n++;
@@ -203,6 +204,8 @@ int main(int argc, char **argv) {
 	process_keywords(input_file);
 	//create_matirx_market(output_file);
 	covariance(tokens, intersections, keywords.size());
+
+	//calc_covariance();
 
 	return 0;
 }
