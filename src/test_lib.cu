@@ -8,8 +8,11 @@ using namespace std;
 
 #define BLOCK_SIZE 16
 
-__device__ double get_intersections(int* intr, int t1, int t2, int wI) {
-	double n = 0;
+//#define Real double
+#define Real float
+
+__device__ Real get_intersections(int* intr, int t1, int t2, int wI) {
+	Real n = 0;
 	for (int i = 0; i < wI; i++) {
 		int x1 = t1 * i;
 		if (intr[x1] == 0)
@@ -28,22 +31,22 @@ __device__ double get_intersections(int* intr, int t1, int t2, int wI) {
 	return n;
 }
 
-__global__ void calc(double* result, int* tokens, int* intr, int wT, int wK, int wI) {
+__global__ void calc(Real* result, int* tokens, int* intr, int wT, int wK, int wI) {
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
 	int j = blockIdx.y * blockDim.y + threadIdx.y;
-	double t1 = (double) tokens[i];
-	double t2 = (double) tokens[j];
+	Real t1 = (Real) tokens[i];
+	Real t2 = (Real) tokens[j];
 	float v = 0;
 	if (i >= j) {
-		double t01 = (1 - t1) / wK;
-		double t00 = -t1 / wK;
+		Real t01 = (1 - t1) / wK;
+		Real t00 = -t1 / wK;
 		if (i == j) {
 			// calculate diagonal
 			v = ((t01 * t01 * t1) + (t00 * t00 * (wK - t1))) / wK;
 		} else {
-			double nn = get_intersections(intr, i, j, wI);
-			double t10 = -t2 / wK;
-			double t11 = (1 - t2) / wK;
+			Real nn = get_intersections(intr, i, j, wI);
+			Real t10 = -t2 / wK;
+			Real t11 = (1 - t2) / wK;
 			v = ((nn * t01 * t11) + ((t1 - nn) * t01 * t10) + ((t2 - nn) * t00 * t11) + ((wK - (t2 + t1 - nn)) * t00 * t10)) / wK;
 			//v=nn;
 		}
@@ -100,9 +103,9 @@ int covariance(map<string, int> tokens, map<string, set<int> > intersections, in
 
 	// allocate memory for the result
 	//free(*product);
-	Size mem_size_result = sizeof(double) * wT * wT;
-	double* h_result = (double*) malloc(mem_size_result);
-	double* d_result;
+	Size mem_size_result = sizeof(Real) * wT * wT;
+	Real* h_result = (Real*) malloc(mem_size_result);
+	Real* d_result;
 	memset(h_result, 0, mem_size_result);
 	cudaMalloc((void **) &d_result, mem_size_result);
 	cudaMemset(d_result, 0, mem_size_result);
