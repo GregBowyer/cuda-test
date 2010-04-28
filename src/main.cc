@@ -167,7 +167,8 @@ void create_matirx_market(const string& output_file) {
 }
 
 void calc_covariance() {
-	double A[tokens.size()][tokens.size()];
+	int wT = tokens.size();
+	double result[wT * wT];
 	int n = 0;
 	double K = (double) keywords.size();
 	for (std::map<std::string, int>::iterator it = tokens.begin(); it != tokens.end(); it++) {
@@ -177,9 +178,13 @@ void calc_covariance() {
 		for (std::map<std::string, int>::iterator itt = tokens.begin(); itt != tokens.end(); itt++) {
 			double t2 = (double) (*itt).second;
 			double v = 0;
-			if (n > 0 && m < n) {
-				// we've already calculated this value so lets get it from the matrix
-			} else {
+
+			//double ttt = -t1 / K;
+			//double ttt = 1 - t1 / K;
+			//double ttt = -t2 / K;
+			//double ttt = 1 - t2 / K;
+
+			if (n >= m) {
 				if (n == m) {
 					// calculate diagonal
 					v = ((pow((1 - t1 / K), 2) * t1) + ((pow((-t1 / K), 2) * (K - t1)))) / K;
@@ -190,13 +195,20 @@ void calc_covariance() {
 					double t10 = -t2 / K;
 					double t11 = 1 - t2 / K;
 					v = ((nn * t01 * t11) + ((t1 - nn) * t01 * t10) + ((t2 - nn) * t00 * t11) + ((K - (t2 + t1 - nn)) * t00 * t10)) / K;
+					//v = nn;
 				}
 			}
-			//cout << t1 << endl;
-			A[m][n] = v;
+
+			result[m + (n * wT)] = v;
+			result[n + (m * wT)] = v;
+
 			m++;
 		}
 		n++;
+	}
+	cout << endl;
+	for (int i = 0; i < 100; i++) {
+		printf("%u %f\n", i, result[i]);
 	}
 }
 

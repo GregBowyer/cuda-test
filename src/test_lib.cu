@@ -12,7 +12,7 @@ using namespace std;
 #define Real float
 
 __device__ Real get_intersections(int* intr, int t1, int t2, int wI) {
-	Real n = 0;
+	int n = 0;
 	for (int i = 0; i < wI; i++) {
 		int x1 = t1 * i;
 		if (intr[x1] == 0)
@@ -28,7 +28,7 @@ __device__ Real get_intersections(int* intr, int t1, int t2, int wI) {
 		}
 	}
 
-	return n;
+	return (Real) n;
 }
 
 __global__ void calc(Real* result, int* tokens, int* intr, int wT, int wK, int wI) {
@@ -38,15 +38,20 @@ __global__ void calc(Real* result, int* tokens, int* intr, int wT, int wK, int w
 	Real t2 = (Real) tokens[j];
 	float v = 0;
 	if (i >= j) {
-		Real t01 = (1 - t1) / wK;
 		Real t00 = -t1 / wK;
+		Real t01 = 1 - t1 / wK;
+		
+		//Real ttt = -t2 / wK;
+		//Real t11 = 1 - t2 / wK;
+		
 		if (i == j) {
 			// calculate diagonal
 			v = ((t01 * t01 * t1) + (t00 * t00 * (wK - t1))) / wK;
 		} else {
-			Real nn = get_intersections(intr, i, j, wI);
+			//Real nn = get_intersections(intr, i, j, wI);
+			Real nn = 0;
 			Real t10 = -t2 / wK;
-			Real t11 = (1 - t2) / wK;
+			Real t11 = 1 - t2 / wK;
 			v = ((nn * t01 * t11) + ((t1 - nn) * t01 * t10) + ((t2 - nn) * t00 * t11) + ((wK - (t2 + t1 - nn)) * t00 * t10)) / wK;
 			//v=nn;
 		}
@@ -119,7 +124,12 @@ int covariance(map<string, int> tokens, map<string, set<int> > intersections, in
 	cudaMemcpy(h_result, d_result, mem_size_result, cudaMemcpyDeviceToHost);
 	CHECK_CUDA_ERROR();
 
+	//for (int i = 0; i < (wT* wI); i++) {
+		
+	//}
+	
 	for (int i = 0; i < (wT * wT); i++) {
+	//for (int i = 0; i < 100; i++) {
 		printf("%u %f\n", i, h_result[i]);
 	}
 
