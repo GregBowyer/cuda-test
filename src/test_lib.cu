@@ -14,12 +14,12 @@ using namespace std;
 __device__ Real get_intersections(int* intr, int t1, int t2, int wI) {
 	int n = 0;
 	for (int i = 0; i < wI; i++) {
-		int x1 = t1 * i;
+		int x1 = (t1 * wI) + i;
 		if (intr[x1] == 0)
 			break;
 		
 		for (int j = 0; j < wI; j++) {
-			int x2 = t2 * j;
+			int x2 = (t2 * wI) + j;
 			if (intr[x2] == 0)
 				break;			
 			
@@ -40,20 +40,14 @@ __global__ void calc(Real* result, int* tokens, int* intr, int wT, int wK, int w
 	if (i >= j) {
 		Real t00 = -t1 / wK;
 		Real t01 = 1 - t1 / wK;
-		
-		//Real ttt = -t2 / wK;
-		//Real t11 = 1 - t2 / wK;
-		
 		if (i == j) {
 			// calculate diagonal
 			v = ((t01 * t01 * t1) + (t00 * t00 * (wK - t1))) / wK;
 		} else {
-			//Real nn = get_intersections(intr, i, j, wI);
-			Real nn = 0;
+			Real nn = get_intersections(intr, i, j, wI);
 			Real t10 = -t2 / wK;
 			Real t11 = 1 - t2 / wK;
 			v = ((nn * t01 * t11) + ((t1 - nn) * t01 * t10) + ((t2 - nn) * t00 * t11) + ((wK - (t2 + t1 - nn)) * t00 * t10)) / wK;
-			//v=nn;
 		}
 		result[i + (j * wT)] = v;
 		result[j + (i * wT)] = v;
@@ -87,6 +81,7 @@ int covariance(map<string, int> tokens, map<string, set<int> > intersections, in
 			wI = s;
 	}
 
+	index = 0;
 	Size mem_size_I = sizeof(int) * wT * wI;
 	int* h_Intr = (int*) malloc(mem_size_I);
 	for (map<string, set<int> >::iterator it = intersections.begin(); it != intersections.end(); it++) {
@@ -100,14 +95,13 @@ int covariance(map<string, int> tokens, map<string, set<int> > intersections, in
 				h_Intr[index++] = 0;
 		}
 	}
-
+	
 	int* d_Intr;
 	cudaMalloc((void**) &d_Intr, mem_size_I);
 	cudaMemcpy(d_Intr, h_Intr, mem_size_I, cudaMemcpyHostToDevice);
 	CHECK_CUDA_ERROR();
 
 	// allocate memory for the result
-	//free(*product);
 	Size mem_size_result = sizeof(Real) * wT * wT;
 	Real* h_result = (Real*) malloc(mem_size_result);
 	Real* d_result;
@@ -123,13 +117,8 @@ int covariance(map<string, int> tokens, map<string, set<int> > intersections, in
 
 	cudaMemcpy(h_result, d_result, mem_size_result, cudaMemcpyDeviceToHost);
 	CHECK_CUDA_ERROR();
-
-	//for (int i = 0; i < (wT* wI); i++) {
-		
-	//}
 	
 	for (int i = 0; i < (wT * wT); i++) {
-	//for (int i = 0; i < 100; i++) {
 		printf("%u %f\n", i, h_result[i]);
 	}
 

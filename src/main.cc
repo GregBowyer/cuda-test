@@ -128,7 +128,7 @@ void process_keywords(const string& input_file) {
 
 	cout << "num tokens: " << tokens.size() << endl;
 	cout << "num keywords: " << keywords.size() << endl;
-	cout << "num vals=" << num_values << endl;
+	cout << "num vals: " << num_values << endl;
 }
 
 void create_matirx_market(const string& output_file) {
@@ -178,12 +178,6 @@ void calc_covariance() {
 		for (std::map<std::string, int>::iterator itt = tokens.begin(); itt != tokens.end(); itt++) {
 			double t2 = (double) (*itt).second;
 			double v = 0;
-
-			//double ttt = -t1 / K;
-			//double ttt = 1 - t1 / K;
-			//double ttt = -t2 / K;
-			//double ttt = 1 - t2 / K;
-
 			if (n >= m) {
 				if (n == m) {
 					// calculate diagonal
@@ -198,17 +192,11 @@ void calc_covariance() {
 					//v = nn;
 				}
 			}
-
 			result[m + (n * wT)] = v;
 			result[n + (m * wT)] = v;
-
 			m++;
 		}
 		n++;
-	}
-	cout << endl;
-	for (int i = 0; i < 100; i++) {
-		printf("%u %f\n", i, result[i]);
 	}
 }
 
