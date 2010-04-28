@@ -4,7 +4,6 @@
 #include <vector>
 #include <map>
 #include <set>
-#include <math.h>
 
 #include "external_dependency.h"
 
@@ -17,7 +16,7 @@ set<string> keywords; // Keywords
 map<string, set<int> > intersections; // intersections between keyword and tokens
 int num_values = 0;
 
-extern int covariance(float** A, int* tokens, Vector* intersections, int wT, int wK);
+extern int covariance(map<string, int> tokens, map<string, set<int> > intersections, int wK);
 
 void split(const std::string& line, const char& delimiter, std::vector<std::string>& col) {
 	std::istringstream iss(line);
@@ -156,48 +155,7 @@ int main(int argc, char **argv) {
 
 	process_keywords(input_file);
 	//create_matirx_market(output_file);
-
-	int wT = tokens.size();
-	int wK = keywords.size();
-	int tk[wT]; // tokens
-	Vector itrs[wT]; // intersections
-
-	// map token info to c array
-	int c = 0; // temp counter
-	for (std::map<std::string, int>::iterator it = tokens.begin(); it != tokens.end(); it++) {
-		tk[c++] = (float) (*it).second;
-	}
-
-	// map intersections info to c array
-	c = 0;
-	for (map<string, set<int> >::iterator it = intersections.begin(); it != intersections.end(); it++) {
-		set<int> tokenSet = (*it).second;
-
-		int *vals;
-		vals = (int *) malloc(tokenSet.size() * sizeof(int));
-		int d = 0;
-		for (set<int>::iterator itt = tokenSet.begin(); itt != tokenSet.end(); itt++) {
-			vals[d++] = *itt;
-		}
-
-		Vector vec;
-		vec.size = tokenSet.size();
-		vec.values = vals;
-
-		itrs[c++] = vec;
-	}
-
-	// allocate host memory for the result
-	float** A = (float**) malloc(sizeof(float) * wT * wT);
-
-	//CHECK_CUDA_ERROR();
-	covariance(A, tk, itrs, wT, wK);
-
-	for (int i = 0; i < 3; i++)
-		for (int j = 0; j < 3; j++)
-			printf("%u %f\n", i, A[i][j]);
-
-	free(A);
+	covariance(tokens, intersections, keywords.size());
 
 	return 0;
 }

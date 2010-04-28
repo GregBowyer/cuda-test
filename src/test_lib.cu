@@ -1,27 +1,38 @@
-#include <external_dependency.h>
 #include <iostream>
+#include <map>
+#include <set>
 
-#if test_lib_EXPORTS
-#  if defined( _WIN32 ) || defined( _WIN64 )
-#    define TEST_LIB_API __declspec(dllexport)
-#  else
-#    define TEST_LIB_API
-#  endif
-#else
-#  define TEST_LIB_API
-#endif
+#include "external_dependency.h"
+
+/*
+ #if test_lib_EXPORTS
+ #  if defined( _WIN32 ) || defined( _WIN64 )
+ #    define TEST_LIB_API __declspec(dllexport)
+ #  else
+ #    define TEST_LIB_API
+ #  endif
+ #else
+ #  define TEST_LIB_API
+ #endif
+ */
+
+using namespace std;
 
 #define BLOCK_SIZE 16
 
-__device__ inline int get_intersections(Vector *itrs, int t1, int t2) {
-	int n = 0;
-	Vector k1 = itrs[t1];
-	Vector k2 = itrs[t2];
-	for (int i = 0; i < k1.size; i++) {
-		int *v1 = k1.values;
-		for (int j = 0; j < k2.size; j++) {
-			int *v2 = k2.values;
-			if (v1[i] == v2[j])
+__device__ float get_intersections(int* intr, int t1, int t2, int wI) {
+	float n = 0;
+	for (int i = 0; i < wI; i++) {
+		int x1 = t1 * i;
+		if (intr[x1] == 0)
+			break;
+		
+		for (int j = 0; j < wI; j++) {
+			int x2 = t2 * j;
+			if (intr[x2] == 0)
+				break;			
+			
+			if (intr[x1] == intr[x2])
 				n++;
 		}
 	}
@@ -29,113 +40,135 @@ __device__ inline int get_intersections(Vector *itrs, int t1, int t2) {
 	return n;
 }
 
-__global__ void calc(float** A, int* tokens, Vector* intersections, int wT, int wK) {
-
-	int i = threadIdx.x;
-	int j = threadIdx.y;
-	
-	
+__global__ void calc(float* result, int* tokens, int* intr, int wT, int wK, int wI) {
+	int i = blockIdx.x * blockDim.x + threadIdx.x;
+	int j = blockIdx.y * blockDim.y + threadIdx.y;
 	float t1 = tokens[i];
 	float t2 = tokens[j];
 	float v = 0;
-	if (i > 0 && j < i) {
-		// already calculated
-	} else {
+	if (i >= j) {
 		float t01 = (1 - t1) / wK;
 		float t00 = -t1 / wK;
 		if (i == j) {
 			// calculate diagonal
-			v = ((__powf(t01, 2) * t1) + ((__powf(t00, 2) * (wK - t1)))) / wK;
+			v = ((t01 * t01 * t1) + (t00 * t00 * (wK - t1))) / wK;
 		} else {
-			float nn = (float) get_intersections(intersections, i, j);
-			//float nn = 1;
-			float t10 = __fdividef(-t2, wK);
-			float t11 = __fdividef((1 - t2), wK);
+			float nn = get_intersections(intr, i, j, wI);
+			//float nn = 69;
+			float t10 = -t2 / wK;
+			float t11 = (1 - t2) / wK;
 			v = ((nn * t01 * t11) + ((t1 - nn) * t01 * t10) + ((t2 - nn) * t00 * t11) + ((wK - (t2 + t1 - nn)) * t00 * t10)) / wK;
+			//v=nn;
 		}
+		result[i + (j * wT)] = (float) v;
+		result[j + (i * wT)] = (float) v;
 	}
-	//if (v != 0)
-	//	std::cout << i << ", " << j << ", " << v << std::endl;
-	// A(i, j) = v;
-	A[i][j] = v;
 }
 
-TEST_LIB_API int covariance(float** h_A, int* tokens, Vector* intersections, int wT, int wK) {
+int covariance(map<string, int> tokens, map<string, set<int> > intersections, int wK) {
+	cudaFree(0);
+	CHECK_CUDA_ERROR();
 
-	//cudaFree(0);
-	//CHECK_CUDA_ERROR();
-
+	int wT = tokens.size();
 	Size mem_size_T = sizeof(int) * wT;
+	int* h_Tokens = (int*) malloc(mem_size_T);
+
+	// map token info to c array and copy to device
+	int index = 0; // temp counter
+	for (std::map<std::string, int>::iterator it = tokens.begin(); it != tokens.end(); it++) {
+		h_Tokens[index++] = (*it).second;
+	}
+
 	int* d_Tokens;
 	cudaMalloc((void**) &d_Tokens, mem_size_T);
-	
-	Size mem_size_I = sizeof(Vector) * wT;
-	Vector* d_Intersections;
-	cudaMalloc((void**) &d_Intersections, mem_size_I);
-	
-	cudaMemcpy(d_Tokens, tokens, mem_size_T, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_Tokens, h_Tokens, mem_size_T, cudaMemcpyHostToDevice);
 	CHECK_CUDA_ERROR();
-	cudaMemcpy(d_Intersections, intersections, mem_size_I, cudaMemcpyHostToDevice);
+
+	// map intersections info to c array
+	int wI = 0;
+	for (map<string, set<int> >::iterator it = intersections.begin(); it != intersections.end(); it++) {
+		int s = ((*it).second).size();
+		if (s > wI)
+			wI = s;
+	}
+
+	Size mem_size_I = sizeof(int) * wT * wI;
+	int* h_Intr = (int*) malloc(mem_size_I);
+	for (map<string, set<int> >::iterator it = intersections.begin(); it != intersections.end(); it++) {
+		set<int> tokenSet = (*it).second;
+		for (set<int>::iterator itt = tokenSet.begin(); itt != tokenSet.end(); itt++) {
+			h_Intr[index++] = *itt;
+		}
+		// pad with zeros
+		if (tokenSet.size() < wI) {
+			for (int i = 0; i < wI - tokenSet.size(); i++)
+				h_Intr[index++] = 0;
+		}
+	}
+
+	int* d_Intr;
+	cudaMalloc((void**) &d_Intr, mem_size_I);
+	cudaMemcpy(d_Intr, h_Intr, mem_size_I, cudaMemcpyHostToDevice);
 	CHECK_CUDA_ERROR();
-	
-	// allocate device memory for result
-	Size size_A = wT * wT;
-	Size mem_size_A = sizeof(float) * size_A;
-	float** d_A;
-	cudaMalloc((void**) &d_A, mem_size_A);
-	CHECK_CUDA_ERROR();
-	
-    //dim3 threads(BLOCK_SIZE, BLOCK_SIZE);
-    //dim3 grid(wT / threads.x, wT / threads.y);
-	
-	int numBlocks = 1;
-	dim3 threadsPerBlock(3,3);
-	
-	calc<<<numBlocks, threadsPerBlock>>>(d_A, d_Tokens, d_Intersections, wT, wK);
+
+	// allocate memory for the result
+	//free(*product);
+	Size mem_size_result = sizeof(float) * wT * wT;
+	float* h_result;
+	float* d_result;
+	h_result = (float*) malloc(mem_size_result);
+	memset(h_result, 0, mem_size_result);
+	cudaMalloc((void **) &d_result, mem_size_result);
+	cudaMemset(d_result, 0, mem_size_result);
+
+	dim3 threadsPerBlock(BLOCK_SIZE, BLOCK_SIZE);
+	dim3 numBlocks(wT / threadsPerBlock.x, wT / threadsPerBlock.y);
+
+	calc<<<numBlocks, threadsPerBlock>>>(d_result, d_Tokens, d_Intr, wT, wK, wI);
 	cudaThreadSynchronize();
 
-	
-	//for (int i = 0; i < 10; i++) {
-	//	printf("%u %f\n", i, d_A[i]);
-	//}
-	
-	cudaMemcpy(h_A, d_A, size_A, cudaMemcpyDeviceToHost);
+	cudaMemcpy(h_result, d_result, mem_size_result, cudaMemcpyDeviceToHost);
 	CHECK_CUDA_ERROR();
-	
+
+	for (int i = 0; i < (wT * wT); i++) {
+		printf("%u %f\n", i, h_result[i]);
+	}
+
 	cudaFree(d_Tokens);
-	cudaFree(d_Intersections);
-	cudaFree(d_A);
-	
+	cudaFree(d_Intr);
+	//cudaFree(d_A);
+	//free(h_Tokens);
+	//free(h_Intr);
+
 	return 0;
 }
 /*
- 	//for (int i = 0; i < wT; i++) {
-		float t1 = tokens[i];
-		//for (int j = 0; j < wT; j++) {
-			float t2 = tokens[j];
-			float v = 0;
-			if (i > 0 && j < i) {
-				// already calculated
-			} else {
-				if (i == j) {
-					// calculate diagonal
-					v = ((pow((1 - t1 / wK), 2) * t1) + ((pow((-t1 / wK), 2) * (wK - t1)))) / wK;
-				} else {
-					//float nn = (float) get_intersections(intersections, i, j);
-					float nn = 1;
-					float t00 = -t1 / wK;
-					float t01 = 1 - t1 / wK;
-					float t10 = -t2 / wK;
-					float t11 = 1 - t2 / wK;
-					v = ((nn * t01 * t11) + ((t1 - nn) * t01 * t10) + ((t2 - nn) * t00 * t11) + ((wK - (t2 + t1 - nn)) * t00 * t10)) / wK;
-				}
-			}
-			//if (v != 0)
-			//	std::cout << i << ", " << j << ", " << v << std::endl;
-			// A(i, j) = v;
-			A[i * j] = 1;
-		//}
-	//}
-	 */
- 
+ //for (int i = 0; i < wT; i++) {
+ float t1 = tokens[i];
+ //for (int j = 0; j < wT; j++) {
+ float t2 = tokens[j];
+ float v = 0;
+ if (i > 0 && j < i) {
+ // already calculated
+ } else {
+ if (i == j) {
+ // calculate diagonal
+ v = ((pow((1 - t1 / wK), 2) * t1) + ((pow((-t1 / wK), 2) * (wK - t1)))) / wK;
+ } else {
+ //float nn = (float) get_intersections(intersections, i, j);
+ float nn = 1;
+ float t00 = -t1 / wK;
+ double t01 = 1 - t1 / wK;
+ float t10 = -t2 / wK;
+ float t11 = 1 - t2 / wK;
+ v = ((nn * t01 * t11) + ((t1 - nn) * t01 * t10) + ((t2 - nn) * t00 * t11) + ((wK - (t2 + t1 - nn)) * t00 * t10)) / wK;
+ }
+ }
+ //if (v != 0)
+ //	std::cout << i << ", " << j << ", " << v << std::endl;
+ // A(i, j) = v;
+ A[i * j] = 1;
+ //}
+ //}
+ */
 
