@@ -4,6 +4,7 @@
 #include <vector>
 #include <map>
 #include <set>
+#include <math.h>
 
 #include "external_dependency.h"
 
@@ -27,6 +28,19 @@ void split(const std::string& line, const char& delimiter, std::vector<std::stri
 
 		col.push_back(tok);
 	}
+}
+
+int get_intersections(const std::map<string, std::set<int> >& intersections, const std::string& t1, const std::string& t2) {
+	int n = 0;
+	const std::set<int>& k1 = intersections.find(t1)->second;
+	const std::set<int>& k2 = intersections.find(t2)->second;
+	for (std::set<int>::iterator it = k1.begin(); it != k1.end(); it++) {
+		if (k2.count(*it) > 0) {
+			n++;
+		}
+	}
+
+	return n;
 }
 
 void process_keywords(const string& input_file) {
@@ -146,6 +160,39 @@ void create_matirx_market(const string& output_file) {
 		n++;
 	}
 	out.close();
+}
+
+void calc_covariance() {
+	int n = 0;
+	double K = (double) keywords.size();
+	for (std::map<std::string, int>::iterator it = tokens.begin(); it != tokens.end(); it++) {
+		int m = 0;
+		double t1 = (double) (*it).second;
+
+		for (std::map<std::string, int>::iterator itt = tokens.begin(); itt != tokens.end(); itt++) {
+			double t2 = (double) (*itt).second;
+			double v = 0;
+			if (n > 0 && m < n) {
+				// we've already calculated this value so lets get it from the matrix
+			} else {
+				if (n == m) {
+					// calculate diagonal
+					v = ((pow((1 - t1 / K), 2) * t1) + ((pow((-t1 / K), 2) * (K - t1)))) / K;
+				} else {
+					int nn = get_intersections(intersections, (*it).first, (*itt).first);
+					double t00 = -t1 / K;
+					double t01 = 1 - t1 / K;
+					double t10 = -t2 / K;
+					double t11 = 1 - t2 / K;
+					v = ((nn * t01 * t11) + ((t1 - nn) * t01 * t10) + ((t2 - nn) * t00 * t11) + ((K - (t2 + t1 - nn)) * t00 * t10)) / K;
+				}
+			}
+			//ierr = B->InsertGlobalValues(n, 1, &v, &m);
+
+			m++;
+		}
+		n++;
+	}
 }
 
 int main(int argc, char **argv) {

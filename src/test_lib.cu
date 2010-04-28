@@ -4,24 +4,12 @@
 
 #include "external_dependency.h"
 
-/*
- #if test_lib_EXPORTS
- #  if defined( _WIN32 ) || defined( _WIN64 )
- #    define TEST_LIB_API __declspec(dllexport)
- #  else
- #    define TEST_LIB_API
- #  endif
- #else
- #  define TEST_LIB_API
- #endif
- */
-
 using namespace std;
 
 #define BLOCK_SIZE 16
 
-__device__ float get_intersections(int* intr, int t1, int t2, int wI) {
-	float n = 0;
+__device__ double get_intersections(int* intr, int t1, int t2, int wI) {
+	double n = 0;
 	for (int i = 0; i < wI; i++) {
 		int x1 = t1 * i;
 		if (intr[x1] == 0)
@@ -43,20 +31,19 @@ __device__ float get_intersections(int* intr, int t1, int t2, int wI) {
 __global__ void calc(float* result, int* tokens, int* intr, int wT, int wK, int wI) {
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
 	int j = blockIdx.y * blockDim.y + threadIdx.y;
-	float t1 = tokens[i];
-	float t2 = tokens[j];
+	double t1 = (double) tokens[i];
+	double t2 = (double) tokens[j];
 	float v = 0;
 	if (i >= j) {
-		float t01 = (1 - t1) / wK;
-		float t00 = -t1 / wK;
+		double t01 = (1 - t1) / wK;
+		double t00 = -t1 / wK;
 		if (i == j) {
 			// calculate diagonal
 			v = ((t01 * t01 * t1) + (t00 * t00 * (wK - t1))) / wK;
 		} else {
-			float nn = get_intersections(intr, i, j, wI);
-			//float nn = 69;
-			float t10 = -t2 / wK;
-			float t11 = (1 - t2) / wK;
+			double nn = get_intersections(intr, i, j, wI);
+			double t10 = -t2 / wK;
+			double t11 = (1 - t2) / wK;
 			v = ((nn * t01 * t11) + ((t1 - nn) * t01 * t10) + ((t2 - nn) * t00 * t11) + ((wK - (t2 + t1 - nn)) * t00 * t10)) / wK;
 			//v=nn;
 		}
@@ -136,39 +123,11 @@ int covariance(map<string, int> tokens, map<string, set<int> > intersections, in
 
 	cudaFree(d_Tokens);
 	cudaFree(d_Intr);
-	//cudaFree(d_A);
+	cudaFree(d_result);
+	free(h_result);
 	//free(h_Tokens);
 	//free(h_Intr);
 
 	return 0;
 }
-/*
- //for (int i = 0; i < wT; i++) {
- float t1 = tokens[i];
- //for (int j = 0; j < wT; j++) {
- float t2 = tokens[j];
- float v = 0;
- if (i > 0 && j < i) {
- // already calculated
- } else {
- if (i == j) {
- // calculate diagonal
- v = ((pow((1 - t1 / wK), 2) * t1) + ((pow((-t1 / wK), 2) * (wK - t1)))) / wK;
- } else {
- //float nn = (float) get_intersections(intersections, i, j);
- float nn = 1;
- float t00 = -t1 / wK;
- double t01 = 1 - t1 / wK;
- float t10 = -t2 / wK;
- float t11 = 1 - t2 / wK;
- v = ((nn * t01 * t11) + ((t1 - nn) * t01 * t10) + ((t2 - nn) * t00 * t11) + ((wK - (t2 + t1 - nn)) * t00 * t10)) / wK;
- }
- }
- //if (v != 0)
- //	std::cout << i << ", " << j << ", " << v << std::endl;
- // A(i, j) = v;
- A[i * j] = 1;
- //}
- //}
- */
 
