@@ -1,7 +1,9 @@
 
-##############################################################################
-# There are two ways to add include directories to the NVCC command
-# line:
+
+add_library(KeywordMatrix 
+    KeywordMatrix.cpp
+    KeywordMatrix.h
+)
 
 #set(CUDA_PROPAGATE_HOST_FLAGS OFF)
 
@@ -43,6 +45,7 @@ ADD_EXECUTABLE(cuda-test
 
 # Specify the dependency.
 TARGET_LINK_LIBRARIES(cuda-test
+  KeywordMatrix
   test_lib
   )
 

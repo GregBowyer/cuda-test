@@ -125,9 +125,9 @@ int covariance(map<string, int> tokens, map<string, set<int> > intersections, in
 	cudaFree(d_Tokens);
 	cudaFree(d_Intr);
 	cudaFree(d_result);
-	//delete[] h_Tokens;
-	//delete[] h_Intr;
-	//delete[] h_result;
+	delete h_Tokens;
+	delete h_Intr;
+	delete h_result;
 
 	return 0;
 }
