@@ -22,4 +22,6 @@ if (CMAKE_SYSTEM_NAME MATCHES Darwin)
     set(CMAKE_CXX_FLAGS -m32)
 endif()
 
-add_subdirectory( src tests )
+add_subdirectory( src )
+add_subdirectory( tests )
+

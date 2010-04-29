@@ -1,8 +1,6 @@
 #ifndef EXTERNDEPENDENCY__H
 #define EXTERNDEPENDENCY__H
 
-#include "external_dependency3.h"
-
 typedef unsigned int Size;
 
 struct Vector {
