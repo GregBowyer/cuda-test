@@ -5,7 +5,7 @@ project (cuda-test)
 set(Boost_USE_STATIC_LIBS ON)
 set(CUDA_VERBOSE_BUILD ON)
 
-find_package(Cuda QUIET REQUIRED)
+find_package(CUDA QUIET REQUIRED)
 find_package(Boost QUIET REQUIRED COMPONENTS unit_test_framework) 
 
 # there are problems compiling 64-bit on mac osx.
