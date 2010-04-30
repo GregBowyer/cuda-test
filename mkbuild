@@ -1,0 +1,16 @@
+#!/bin/sh
+set -x
+
+mkdir build
+mkdir release
+
+cd build
+cmake ..
+
+cd ../release
+cmake -DCMAKE_BUILD_TYPE=Release ..
+
+cd ..
+cp tests/keywords.txt build/tests
+cp tests/keywords.txt release/tests
+

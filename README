@@ -1,0 +1,34 @@
+
+To build:
+
+mkdir build
+cd build
+cmake ..
+make
+
+Or for verbose and to run tests:
+
+make VERBOSE=1 all test
+
+
+On Mac OSX, you will need to build and install Boost with 32-bit support.
+The following will build the libraries with 32 and 64-bit architecture.
+
+/bjam address-model=32_64 architecture=x86 link=static install
+
+Libraries and tools used:
+
+Cuda
+http://developer.nvidia.com/object/gpucomputing.html
+http://developer.download.nvidia.com/compute/cuda/3_0/toolkit/docs/online/index.html
+
+Boost
+http://www.boost.org/
+http://www.boost.org/doc/libs/1_42_0
+
+CMake
+http://www.cmake.org/
+
+http://code.google.com/p/cusp-library/
+http://code.google.com/p/thrust/
+http://bebop.cs.berkeley.edu/smc/
