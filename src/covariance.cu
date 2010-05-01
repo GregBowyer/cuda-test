@@ -9,9 +9,8 @@ using namespace std;
 
 #define BLOCK_SIZE 16
 
-int covariance(map<string, int> tokens, map<string, set<int> > intersections, int wK) {
-	cudaFree(0);
-	CHECK_CUDA_ERROR();
+void covariance(float* h_result, map<string, int> tokens, map<string, set<int> > intersections, int wK) {
+	CUDA_SAFE_CALL( cudaFree(0) );
 
 	int wT = tokens.size();
 	Size mem_size_T = sizeof(int) * wT;
@@ -24,9 +23,8 @@ int covariance(map<string, int> tokens, map<string, set<int> > intersections, in
 	}
 
 	int* d_Tokens;
-	cudaMalloc((void**) &d_Tokens, mem_size_T);
-	cudaMemcpy(d_Tokens, h_Tokens, mem_size_T, cudaMemcpyHostToDevice);
-	CHECK_CUDA_ERROR();
+	CUDA_SAFE_CALL( cudaMalloc((void**) &d_Tokens, mem_size_T) );
+	CUDA_SAFE_CALL( cudaMemcpy(d_Tokens, h_Tokens, mem_size_T, cudaMemcpyHostToDevice) );
 
 	// map intersections info to c array
 	int wI = 0;
@@ -52,38 +50,30 @@ int covariance(map<string, int> tokens, map<string, set<int> > intersections, in
 	}
 	
 	int* d_Intr;
-	cudaMalloc((void**) &d_Intr, mem_size_I);
-	cudaMemcpy(d_Intr, h_Intr, mem_size_I, cudaMemcpyHostToDevice);
-	CHECK_CUDA_ERROR();
+	CUDA_SAFE_CALL( cudaMalloc((void**) &d_Intr, mem_size_I) );
+	CUDA_SAFE_CALL( cudaMemcpy(d_Intr, h_Intr, mem_size_I, cudaMemcpyHostToDevice) );
 
 	// allocate memory for the result
-	Size mem_size_result = sizeof(Real) * wT * wT;
-	Real* h_result = (Real*) malloc(mem_size_result);
-	Real* d_result;
-	memset(h_result, 0, mem_size_result);
-	cudaMalloc((void **) &d_result, mem_size_result);
-	cudaMemset(d_result, 0, mem_size_result);
+	Size mem_size_result = sizeof(float) * wT * wT;
+	//float* h_result = (float*) malloc(mem_size_result);
+	float* d_result;
+	//memset(h_result, 0, mem_size_result);
+	CUDA_SAFE_CALL( cudaMalloc((void **) &d_result, mem_size_result) );
+	CUDA_SAFE_CALL( cudaMemset(d_result, 0, mem_size_result) );
 
 	dim3 threadsPerBlock(BLOCK_SIZE, BLOCK_SIZE);
 	dim3 numBlocks(wT / threadsPerBlock.x, wT / threadsPerBlock.y);
 
 	calc<<<numBlocks, threadsPerBlock>>>(d_result, d_Tokens, d_Intr, wT, wK, wI);
 	cudaThreadSynchronize();
+	CUDA_CHECK_ERROR();
 
-	cudaMemcpy(h_result, d_result, mem_size_result, cudaMemcpyDeviceToHost);
-	CHECK_CUDA_ERROR();
+	CUDA_SAFE_CALL( cudaMemcpy(h_result, d_result, mem_size_result, cudaMemcpyDeviceToHost) );
 	
-	for (int i = 0; i < (wT * wT); i++) {
-		printf("%u %f\n", i, h_result[i]);
-	}
-
 	cudaFree(d_Tokens);
 	cudaFree(d_Intr);
 	cudaFree(d_result);
 	delete h_Tokens;
 	delete h_Intr;
-	delete h_result;
-
-	return 0;
 }
 

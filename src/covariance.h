@@ -1,12 +1,7 @@
-#ifndef EXTERNDEPENDENCY__H
-#define EXTERNDEPENDENCY__H
+#ifndef COVARIANCE__H
+#define COVARIANCE__H
 
-typedef unsigned int Size;
-
-struct Vector {
-	int size;
-	int* values;
-};
+#define Size unsigned int
 
 #ifdef __CUDACC__
 #  define CUDA_SAFE_CALL_NO_SYNC( call) do {                                 \
@@ -40,13 +35,4 @@ struct Vector {
 #define CUDA_SAFE_CALL(x)
 #endif
 
-#define CHECK_CUDA_ERROR() \
-  { \
-    cudaThreadSynchronize(); \
-    cudaError_t error = cudaGetLastError(); \
-    if(error != cudaSuccess) { \
-      printf("error (%s: line %d): %s\n", __FILE__, __LINE__, cudaGetErrorString(error)); \
-      return 1; \
-    } \
-  }
-#endif
+#endif // #ifndef COVARIANCE__H
