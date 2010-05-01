@@ -1,6 +1,5 @@
 #include "opts.h"
-
-#include "KeywordMatrix.h";
+#include "KeywordMatrix.h"
 
 using namespace std;
 
@@ -18,8 +17,6 @@ int main(int argc, char **argv) {
 	KeywordMatrix km(input_file.c_str());
 
 	covariance(km.get_tokens(), km.get_intersections(), km.num_keywords());
-
-	//calc_covariance();
 
 	return 0;
 }

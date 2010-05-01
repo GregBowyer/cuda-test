@@ -20,6 +20,12 @@ endif()
 
 enable_testing()
 
+# copy needed for tests to build directory
+file(COPY 
+    ${CMAKE_SOURCE_DIR}/tests/keywords.txt 
+    ${CMAKE_SOURCE_DIR}/tests/covariance.mm
+    DESTINATION ${CMAKE_BINARY_DIR}/tests/
+)                                            
+
 add_subdirectory( src )
 add_subdirectory( tests )
-

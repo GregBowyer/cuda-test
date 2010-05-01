@@ -45,6 +45,10 @@ public:
 		return keywords.size();
 	}
 
+	int num_tokens() {
+		return tokens.size();
+	}
+
 private:
 
 	map<string, int> tokens; // Tokens

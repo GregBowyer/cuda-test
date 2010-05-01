@@ -2,7 +2,7 @@
  * KeywordMatrix.cpp
  *
  *  Created on: Apr 29, 2010
- *      Author: amerlo
+ *  Author: amerlo
  */
 
 #include "KeywordMatrix.h"
@@ -65,6 +65,7 @@ matrix<float> KeywordMatrix::calc_covariance() {
 				}
 			}
 			A(n, m) = v;
+			A(m, n) = v;
 			m++;
 		}
 		n++;
@@ -112,6 +113,7 @@ void KeywordMatrix::process_keywords(const char* input_file) {
 	ifstream in;
 	string keyword;
 	int token_reject = 1;
+	num_values = 0;
 
 	in.open(input_file);
 	if (!in) {
