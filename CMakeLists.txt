@@ -27,5 +27,6 @@ file(COPY
     DESTINATION ${CMAKE_BINARY_DIR}/tests/
 )                                            
 
+add_subdirectory( common )
 add_subdirectory( src )
 add_subdirectory( tests )

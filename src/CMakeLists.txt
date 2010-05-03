@@ -44,6 +44,7 @@ ADD_EXECUTABLE(cuda-test
 
 # Specify the dependency.
 TARGET_LINK_LIBRARIES(cuda-test
+  cuda-utils
   KeywordMatrix
   Covariance
   Opts
