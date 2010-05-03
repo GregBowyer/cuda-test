@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
 		printf("%u %f\n", i, result[i]);
 	}
 
-	delete result;
+	free(result);
 
 	return 0;
 }
