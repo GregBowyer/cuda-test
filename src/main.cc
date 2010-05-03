@@ -2,11 +2,20 @@
 #include "timer.h"
 #include "KeywordMatrix.h"
 
+#include "cutil.h"
+#include "cuda.h"
+#include "cuda_runtime_api.h"
+
 using namespace std;
 
 extern void covariance(float* result, map<string, int> tokens, map<string, set<int> > intersections, int wK);
 
 int main(int argc, char **argv) {
+
+	CUTimer *init_time = start_timing("Cuda Init time");
+	CUT_DEVICE_INIT(argc, argv);
+	cudaFree(0);
+	finish_timing(init_time);
 
 	options prog_opts;
 	process_commandline_options(&prog_opts, argc, argv);
