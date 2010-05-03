@@ -6,6 +6,7 @@
  */
 
 #include "KeywordMatrix.h"
+#include "timer.h"
 
 KeywordMatrix::KeywordMatrix(const char* input_file) {
 	process_keywords(input_file);
@@ -15,8 +16,10 @@ KeywordMatrix::~KeywordMatrix() {
 
 }
 
-int KeywordMatrix::get_intersections(const std::map<string, std::set<int> >& intersections, const std::string& t1, const std::string& t2) {
+int KeywordMatrix::get_intersections(const std::map<string, std::set<int> >& intersections,
+        const std::string& t1, const std::string& t2) {
 	int n = 0;
+	CUTimer *timer = start_timing("Intersection calculation");
 	const std::set<int>& k1 = intersections.find(t1)->second;
 	const std::set<int>& k2 = intersections.find(t2)->second;
 	for (std::set<int>::iterator it = k1.begin(); it != k1.end(); it++) {
@@ -25,6 +28,7 @@ int KeywordMatrix::get_intersections(const std::map<string, std::set<int> >& int
 		}
 	}
 
+	finish_timing(timer);
 	return n;
 }
 
@@ -40,6 +44,7 @@ void split(const std::string& line, const char& delimiter, std::vector<std::stri
 }
 
 matrix<float> KeywordMatrix::calc_covariance() {
+	CUTimer *timer = start_timing("CPU covariance calculation");
 	int wT = tokens.size();
 	matrix<float> A(wT, wT);
 	int n = 0;
@@ -71,10 +76,13 @@ matrix<float> KeywordMatrix::calc_covariance() {
 		n++;
 	}
 
+	finish_timing(timer);
+
 	return A;
 }
 
 void KeywordMatrix::create_matirx_market(const string& output_file) {
+	CUTimer *timer = start_timing("Matrix Market File Creation");
 	ofstream out;
 	string keyword;
 
@@ -107,9 +115,12 @@ void KeywordMatrix::create_matirx_market(const string& output_file) {
 		n++;
 	}
 	out.close();
+
+	finish_timing(timer);
 }
 
 void KeywordMatrix::process_keywords(const char* input_file) {
+	CUTimer *timer = start_timing("Keyword Processing");
 	ifstream in;
 	string keyword;
 	int token_reject = 1;
@@ -192,4 +203,6 @@ void KeywordMatrix::process_keywords(const char* input_file) {
 	cout << ">> num tokens: " << tokens.size() << endl;
 	cout << ">> num keywords: " << keywords.size() << endl;
 	cout << ">> num vals: " << num_values << endl;
+
+	finish_timing(timer);
 }

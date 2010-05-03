@@ -1,4 +1,5 @@
 #include "opts.h"
+#include "timer.h"
 #include "KeywordMatrix.h"
 
 using namespace std;
@@ -14,8 +15,13 @@ int main(int argc, char **argv) {
     printf("Input file: %s\n", prog_opts.input_file);
 	string output_file = prog_opts.output_file;
 
+	CUTimer *total_time = start_timing("Total Runtime");
+	CUTimer *timer_load = start_timing("File Load");
+
 	KeywordMatrix km(input_file.c_str());
 	int wT = km.num_tokens();
+
+	finish_timing(timer_load);
 
 	unsigned int mem_size_result = sizeof(float) * wT * wT;
 	float* result = (float*) calloc(1, mem_size_result);
@@ -26,7 +32,8 @@ int main(int argc, char **argv) {
 		printf("%u %f\n", i, result[i]);
 	}
 
-	free(result);
+	finish_timing(total_time);
 
+	free(result);
 	return 0;
 }

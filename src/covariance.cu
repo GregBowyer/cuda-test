@@ -4,6 +4,7 @@
 
 #include "covariance.h"
 #include "covariance_kernel.cu"
+#include "timer.h"
 
 using namespace std;
 
@@ -11,6 +12,7 @@ using namespace std;
 
 void covariance(float* h_result, map<string, int> tokens, map<string, set<int> > intersections, int wK) {
 	CUDA_SAFE_CALL(cudaFree(0));
+	CUTimer *mem_timer = start_timing("Memory handling time");
 
 	int wT = tokens.size();
 	Size mem_size_T = sizeof(int) * wT;
@@ -61,6 +63,9 @@ void covariance(float* h_result, map<string, int> tokens, map<string, set<int> >
 	CUDA_SAFE_CALL(cudaMalloc((void **) &d_result, mem_size_result));
 	CUDA_SAFE_CALL(cudaMemset(d_result, 0, mem_size_result));
 
+	finish_timing(mem_timer);
+
+	CUTimer *calculation_timer = start_timing("Calculation on card");
 	dim3 threadsPerBlock(BLOCK_SIZE, BLOCK_SIZE);
 	dim3 numBlocks(wT / threadsPerBlock.x, wT / threadsPerBlock.y);
 
@@ -75,5 +80,6 @@ void covariance(float* h_result, map<string, int> tokens, map<string, set<int> >
 	cudaFree(d_result);
 	delete h_Tokens;
 	delete h_Intr;
+	finish_timing(calculation_timer);
 }
 

@@ -1,3 +1,6 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+
+INCLUDE_DIRECTORIES(../common/inc)
 # The cuda_include_directories adds paths to only cuda compilation.
 CUDA_INCLUDE_DIRECTORIES(
   ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17,20 +20,26 @@ add_definitions(-DMULTIPLIER=2)
 #  -arch sm_13
 set(BUILD_SHARED_LIBS ON)
 set(CUDA_ATTACH_VS_BUILD_RULE_TO_CUDA_FILE ON)
+set(CMAKE_C_FLAGS_DEBUG "-fno-omit-frame-pointer -g -gdwarf-2")
+
+# GetOpts handler used to pull command line opts from the OS
+add_library(support_code
+    STATIC
+    opts.c
+    timer.cc
+)
+TARGET_LINK_LIBRARIES(support_code cuda-utils)
 
 # KeywordMatrix lib creates a keyword/token matrix from a list of keywords
 add_library(KeywordMatrix
+    STATIC
     KeywordMatrix.cpp
     KeywordMatrix.h
 )
-
-# GetOpts handler used to pull command line opts from the OS
-add_library(Opts
-    opts.c
-    opts.h
-)
+TARGET_LINK_LIBRARIES(KeywordMatrix support_code)
 
 CUDA_ADD_LIBRARY(Covariance
+    STATIC
     covariance.h
     covariance.cu
     OPTIONS ""
@@ -48,5 +57,5 @@ TARGET_LINK_LIBRARIES(cuda-test
   cuda-utils
   KeywordMatrix
   Covariance
-  Opts
+  support_code
 )
