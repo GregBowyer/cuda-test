@@ -8,11 +8,11 @@ extern void covariance(float* result, map<string, int> tokens, map<string, set<i
 
 int main(int argc, char **argv) {
 
-    options prog_opts;
-    process_commandline_options(&prog_opts, argc, argv);
+	options prog_opts;
+	process_commandline_options(&prog_opts, argc, argv);
 
 	string input_file = prog_opts.input_file;
-    printf("Input file: %s\n", prog_opts.input_file);
+	printf("Input file: %s\n", prog_opts.input_file);
 	string output_file = prog_opts.output_file;
 
 	CUTimer *total_time = start_timing("Total Runtime");
