@@ -10,7 +10,7 @@ using namespace std;
 #define BLOCK_SIZE 16
 
 void covariance(float* h_result, map<string, int> tokens, map<string, set<int> > intersections, int wK) {
-	CUDA_SAFE_CALL( cudaFree(0) );
+	CUDA_SAFE_CALL(cudaFree(0));
 
 	int wT = tokens.size();
 	Size mem_size_T = sizeof(int) * wT;
@@ -23,8 +23,8 @@ void covariance(float* h_result, map<string, int> tokens, map<string, set<int> >
 	}
 
 	int* d_Tokens;
-	CUDA_SAFE_CALL( cudaMalloc((void**) &d_Tokens, mem_size_T) );
-	CUDA_SAFE_CALL( cudaMemcpy(d_Tokens, h_Tokens, mem_size_T, cudaMemcpyHostToDevice) );
+	CUDA_SAFE_CALL(cudaMalloc((void**) &d_Tokens, mem_size_T));
+	CUDA_SAFE_CALL(cudaMemcpy(d_Tokens, h_Tokens, mem_size_T, cudaMemcpyHostToDevice));
 
 	// map intersections info to c array
 	int wI = 0;
@@ -50,16 +50,16 @@ void covariance(float* h_result, map<string, int> tokens, map<string, set<int> >
 	}
 	
 	int* d_Intr;
-	CUDA_SAFE_CALL( cudaMalloc((void**) &d_Intr, mem_size_I) );
-	CUDA_SAFE_CALL( cudaMemcpy(d_Intr, h_Intr, mem_size_I, cudaMemcpyHostToDevice) );
+	CUDA_SAFE_CALL(cudaMalloc((void**) &d_Intr, mem_size_I));
+	CUDA_SAFE_CALL(cudaMemcpy(d_Intr, h_Intr, mem_size_I, cudaMemcpyHostToDevice));
 
 	// allocate memory for the result
 	Size mem_size_result = sizeof(float) * wT * wT;
 	//float* h_result = (float*) malloc(mem_size_result);
 	float* d_result;
 	//memset(h_result, 0, mem_size_result);
-	CUDA_SAFE_CALL( cudaMalloc((void **) &d_result, mem_size_result) );
-	CUDA_SAFE_CALL( cudaMemset(d_result, 0, mem_size_result) );
+	CUDA_SAFE_CALL(cudaMalloc((void **) &d_result, mem_size_result));
+	CUDA_SAFE_CALL(cudaMemset(d_result, 0, mem_size_result));
 
 	dim3 threadsPerBlock(BLOCK_SIZE, BLOCK_SIZE);
 	dim3 numBlocks(wT / threadsPerBlock.x, wT / threadsPerBlock.y);
@@ -68,7 +68,7 @@ void covariance(float* h_result, map<string, int> tokens, map<string, set<int> >
 	cudaThreadSynchronize();
 	CUDA_CHECK_ERROR();
 
-	CUDA_SAFE_CALL( cudaMemcpy(h_result, d_result, mem_size_result, cudaMemcpyDeviceToHost) );
+	CUDA_SAFE_CALL(cudaMemcpy(h_result, d_result, mem_size_result, cudaMemcpyDeviceToHost));
 	
 	cudaFree(d_Tokens);
 	cudaFree(d_Intr);
