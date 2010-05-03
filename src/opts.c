@@ -8,6 +8,7 @@ void print_help(char* prog_name, int exit_code) {
     printf("Arguments:\n");
     printf("\t-h\t\tprint this help and exit\n");
     printf("\t-o\t\tuse a different output file\n");
+    printf("\t-v\t\tincrease verbosity, more v's for higher levels\n");
     exit(exit_code);
 }
 

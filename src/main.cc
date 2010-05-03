@@ -28,8 +28,10 @@ int main(int argc, char **argv) {
 
 	covariance(result, km.get_tokens(), km.get_intersections(), km.num_keywords());
 
-	for (int i = 0; i < (wT * wT); i++) {
-		printf("%u %f\n", i, result[i]);
+	if(prog_opts.verbosity != 0) {
+		for (int i = 0; i < (wT * wT); i++) {
+			printf("%u %f\n", i, result[i]);
+		}
 	}
 
 	finish_timing(total_time);

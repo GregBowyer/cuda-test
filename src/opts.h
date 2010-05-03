@@ -10,7 +10,7 @@ extern "C" {
 #include <stdlib.h>
 
 struct options {
-    int verbosity;
+    unsigned int verbosity;
     char* input_file;
     char* output_file;
 };
