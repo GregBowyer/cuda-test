@@ -1,12 +1,12 @@
-# Cuda-test project 
-cmake_minimum_required (VERSION 2.6) 
-project (cuda-test) 
+# Cuda-test project
+cmake_minimum_required(VERSION 2.6)
+project(cuda-test)
 
 set(Boost_USE_STATIC_LIBS ON)
 set(CUDA_VERBOSE_BUILD ON)
 
 find_package(CUDA QUIET REQUIRED)
-find_package(Boost QUIET REQUIRED COMPONENTS unit_test_framework) 
+find_package(Boost QUIET REQUIRED COMPONENTS unit_test_framework)
 
 # there are problems compiling 64-bit on mac osx.
 # this compile everything in 32-bit
@@ -25,8 +25,11 @@ file(COPY
     ${CMAKE_SOURCE_DIR}/tests/keywords.txt 
     ${CMAKE_SOURCE_DIR}/tests/covariance.mm
     DESTINATION ${CMAKE_BINARY_DIR}/tests/
-)                                            
+)
 
-add_subdirectory( common )
-add_subdirectory( src )
-add_subdirectory( tests )
+add_subdirectory(common)
+add_subdirectory(src)
+add_subdirectory(tests)
+
+# Add a special target to clean nvcc generated files.
+CUDA_BUILD_CLEAN_TARGET()
