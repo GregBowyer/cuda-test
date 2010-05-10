@@ -33,8 +33,7 @@ BOOST_AUTO_TEST_CASE( test_covariance )
 
 	int wT = km.num_tokens();
 	unsigned int mem_size_result = sizeof(float) * wT * wT;
-	float* result = (float*) malloc(mem_size_result);
-	memset(result, 0, mem_size_result);
+	float* result = (float*) calloc(1, mem_size_result);
 
 	covariance(result, km.get_tokens(), km.get_intersections(), km.num_keywords());
 
