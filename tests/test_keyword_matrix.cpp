@@ -1,6 +1,8 @@
 #define BOOST_TEST_MODULE keyword_matrix_test
-#define BOOST_TEST_MAIN
-#define BOOST_TEST_DYN_LINK
+#if defined (__linux__)
+	#define BOOST_TEST_MAIN
+	#define BOOST_TEST_DYN_LINK
+#endif
 
 #include <boost/test/unit_test.hpp>
 
