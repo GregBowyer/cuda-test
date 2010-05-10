@@ -1,4 +1,7 @@
 #define BOOST_TEST_MODULE keyword_matrix_test
+#define BOOST_TEST_MAIN
+#define BOOST_TEST_DYN_LINK
+
 #include <boost/test/unit_test.hpp>
 
 #include <boost/numeric/ublas/matrix.hpp>
