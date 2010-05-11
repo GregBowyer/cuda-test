@@ -42,7 +42,6 @@ BOOST_AUTO_TEST_CASE( test_covariance )
 
 	for (unsigned int i = 0; i < cov1.size1(); i++) {
 		for (unsigned int j = 0; j < cov1.size2(); j++) {
-			printf("%u, %u = %f %f\n", i, j, cov1(i, j), result[i + (j * wT)]);
 			BOOST_CHECK_CLOSE(cov1(i, j), result[i + (j * wT)], EPSILON);
 		}
 	}

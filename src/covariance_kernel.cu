@@ -5,12 +5,12 @@ __device__ float get_intersections(int* intr, int t1, int t2, int wI) {
 	int n = 0;
 	for (int i = 0; i < wI; i++) {
 		int x1 = (t1 * wI) + i;
-		if (intr[x1] == 0)
+		if (intr[x1] == -1)
 			break;
 		
 		for (int j = 0; j < wI; j++) {
 			int x2 = (t2 * wI) + j;
-			if (intr[x2] == 0)
+			if (intr[x2] == -1)
 				break;			
 			
 			if (intr[x1] == intr[x2])

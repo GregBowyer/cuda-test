@@ -16,20 +16,24 @@ KeywordMatrix::~KeywordMatrix() {
 
 }
 
-int KeywordMatrix::get_intersections(const std::map<string, std::set<int> >& intersections,
-        const std::string& t1, const std::string& t2) {
+float count_intersections(int* intr, int t1, int t2, int wI) {
 	int n = 0;
-	CUTimer *timer = start_timing("Intersection calculation");
-	const std::set<int>& k1 = intersections.find(t1)->second;
-	const std::set<int>& k2 = intersections.find(t2)->second;
-	for (std::set<int>::iterator it = k1.begin(); it != k1.end(); it++) {
-		if (k2.count(*it) > 0) {
-			n++;
+	for (int i = 0; i < wI; i++) {
+		int x1 = (t1 * wI) + i;
+		if (intr[x1] == -1)
+			break;
+
+		for (int j = 0; j < wI; j++) {
+			int x2 = (t2 * wI) + j;
+			if (intr[x2] == -1)
+				break;
+
+			if (intr[x1] == intr[x2])
+				n++;
 		}
 	}
 
-	finish_timing(timer);
-	return n;
+	return (float) n;
 }
 
 void split(const std::string& line, const char& delimiter, std::vector<std::string>& col) {
@@ -45,8 +49,33 @@ void split(const std::string& line, const char& delimiter, std::vector<std::stri
 
 matrix<float> KeywordMatrix::calc_covariance() {
 	CUTimer *timer = start_timing("CPU covariance calculation");
-	int wT = tokens.size();
+	unsigned int wT = tokens.size();
 	matrix<float> A(wT, wT);
+
+	// map intersections info to c array
+	unsigned int wI = 0;
+	for (map<string, set<int> >::iterator it = intersections.begin(); it != intersections.end(); it++) {
+		unsigned int s = ((*it).second).size();
+		if (s > wI)
+			wI = s;
+	}
+
+	int index = 0;
+	size_t mem_size_I = sizeof(int) * wT * wI;
+	int* intr = (int*) malloc(mem_size_I);
+	for (map<string, set<int> >::iterator it = intersections.begin(); it != intersections.end(); it++) {
+		set<int> tokenSet = (*it).second;
+		for (set<int>::iterator itt = tokenSet.begin(); itt != tokenSet.end(); itt++) {
+			intr[index++] = *itt;
+		}
+
+		// pad with -1
+		if (tokenSet.size() < wI) {
+			for (unsigned int i = 0; i < wI - tokenSet.size(); i++)
+				intr[index++] = -1;
+		}
+	}
+
 	int n = 0;
 	double K = (float) keywords.size();
 	for (std::map<std::string, int>::iterator it = tokens.begin(); it != tokens.end(); it++) {
@@ -61,7 +90,7 @@ matrix<float> KeywordMatrix::calc_covariance() {
 					// calculate diagonal
 					v = ((pow((1 - t1 / K), 2) * t1) + ((pow((-t1 / K), 2) * (K - t1)))) / K;
 				} else {
-					int nn = get_intersections(intersections, (*it).first, (*itt).first);
+					float nn = count_intersections(intr, n, m, wI);
 					float t00 = -t1 / K;
 					float t01 = 1 - t1 / K;
 					float t10 = -t2 / K;
@@ -175,7 +204,7 @@ void KeywordMatrix::process_keywords(const char* input_file) {
 			if (it != keywords.begin())
 				it--;
 			keywords.erase(removeMe);
-			cout << "rejecting " << keyword << endl;
+			//cout << "rejecting " << keyword << endl;
 		}
 	}
 
