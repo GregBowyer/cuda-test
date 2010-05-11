@@ -4,7 +4,7 @@
 #define Size unsigned int
 
 #ifdef __CUDACC__
-#  define CUDA_SAFE_CALL_NO_SYNC( call) do {                                 \
+#  define Cuda_SAFE_CALL_NO_SYNC( call) do {                                 \
         cudaError err = call;                                                \
         if( cudaSuccess != err) {                                            \
                 fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n",\
@@ -12,8 +12,8 @@
                 exit(EXIT_FAILURE);                                          \
         } } while (0)
 
-#  define CUDA_SAFE_CALL( call) do {                                         \
-        CUDA_SAFE_CALL_NO_SYNC(call);                                        \
+#  define Cuda_SAFE_CALL( call) do {                                         \
+        Cuda_SAFE_CALL_NO_SYNC(call);                                        \
         cudaError err = cudaThreadSynchronize();                             \
         if( cudaSuccess != err) {                                            \
                 fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n",\
@@ -21,7 +21,7 @@
                 exit(EXIT_FAILURE);                                          \
         } } while (0)
 
-#  define CUDA_CHECK_ERROR() do {                                            \
+#  define Cuda_CHECK_ERROR() do {                                            \
         cudaError err = cudaGetLastError();                                  \
         if( cudaSuccess != err) {                                            \
                 fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n",\

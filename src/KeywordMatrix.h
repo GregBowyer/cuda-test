@@ -57,8 +57,6 @@ private:
 	int num_values;
 
 	void process_keywords(const char* input_file);
-	int get_intersections(const std::map<string, std::set<int> >& intersections, const std::string& t1, const std::string& t2);
-
 };
 
 #endif /* KEYWORDMATRIX_H_ */
