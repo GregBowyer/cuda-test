@@ -12,7 +12,8 @@ using namespace std;
 
 void covariance(float* h_result, map<string, int> tokens, map<string, set<int> > intersections, int wK) {
 	Cuda_SAFE_CALL(cudaFree(0));
-	CUTimer *mem_timer = start_timing("Memory handling time");
+	CUTimer *gpu_total_timer = start_timing("[GPU] Total Time");
+	CUTimer *mem_timer = start_timing("[GPU] Host→Device Memory Load");
 
 	int wT = tokens.size();
 	size_t mem_size_T = sizeof(int) * wT;
@@ -65,14 +66,16 @@ void covariance(float* h_result, map<string, int> tokens, map<string, set<int> >
 
 	finish_timing(mem_timer);
 
-	CUTimer *calculation_timer = start_timing("Calculation on card");
+	CUTimer *calculation_timer = start_timing("[GPU] Calculation on card");
 	dim3 threadsPerBlock(BLOCK_SIZE, BLOCK_SIZE);
 	dim3 numBlocks(wT / threadsPerBlock.x, wT / threadsPerBlock.y);
 
 	calc<<<numBlocks, threadsPerBlock>>>(d_result, d_Tokens, d_Intr, wT, wK, wI);
 	cudaThreadSynchronize();
 	Cuda_CHECK_ERROR();
+	finish_timing(calculation_timer);
 
+	CUTimer *backcopy_timer = start_timing("[GPU] Device→Host Memory Fetch");
 	Cuda_SAFE_CALL(cudaMemcpy(h_result, d_result, mem_size_result, cudaMemcpyDeviceToHost));
 	
 	cudaFree(d_Tokens);
@@ -80,6 +83,7 @@ void covariance(float* h_result, map<string, int> tokens, map<string, set<int> >
 	cudaFree(d_result);
 	delete h_Tokens;
 	delete h_Intr;
-	finish_timing(calculation_timer);
+	finish_timing(backcopy_timer);
+	finish_timing(gpu_total_timer);
 }
 
