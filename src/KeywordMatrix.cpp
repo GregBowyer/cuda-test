@@ -76,9 +76,23 @@ matrix<float> KeywordMatrix::calc_covariance() {
 		}
 	}
 
+	unsigned int sizeT = wT * wT;
+	size_t mem_size_intr = sizeof(int) * sizeT;
+	int* iintr = (int*) calloc(sizeT, mem_size_intr);
+	for (unsigned int i = 0; i<wT; i++) {
+		for (unsigned int j = 0; j < wT; j++) {
+			if (i != j && i < j) {
+				int v = count_intersections(intr, i, j, wI);
+				iintr[i + j * wT] = v;
+			}
+
+		}
+	}
+
 	int n = 0;
 	double K = (float) keywords.size();
 	for (std::map<std::string, int>::iterator it = tokens.begin(); it != tokens.end(); it++) {
+		//cout << (*it).first << endl;
 		int m = 0;
 		float t1 = (float) (*it).second;
 
@@ -90,7 +104,8 @@ matrix<float> KeywordMatrix::calc_covariance() {
 					// calculate diagonal
 					v = ((pow((1 - t1 / K), 2) * t1) + ((pow((-t1 / K), 2) * (K - t1)))) / K;
 				} else {
-					float nn = count_intersections(intr, n, m, wI);
+					//float nn = count_intersections(intr, n, m, wI);
+					float nn = (float) iintr[m + n * wT];
 					float t00 = -t1 / K;
 					float t01 = 1 - t1 / K;
 					float t10 = -t2 / K;
@@ -104,6 +119,16 @@ matrix<float> KeywordMatrix::calc_covariance() {
 		}
 		n++;
 	}
+
+	/*
+	for (int i = 0; i<wT; i++) {
+		for (int j = 0; j < wT; j++) {
+			int v = count_intersections(intr, i, j, wI);
+			//cout << v << "\t";
+		}
+		//cout << endl;
+	}
+	*/
 
 	finish_timing(timer);
 

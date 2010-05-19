@@ -42,9 +42,9 @@ CUDA_ADD_LIBRARY(Covariance
     STATIC
     covariance.h
     covariance.cu
-    OPTIONS ""
+    OPTIONS "--ptxas-options=-v"
     RELEASE --use_fast_math -DNDEBUG
-    DEBUG -g -DDEBUG
+    DEBUG -g -G -DDEBUG 
 )
 
 # Then link the shared library to another executable.

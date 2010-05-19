@@ -10,10 +10,30 @@ using namespace std;
 
 #define BLOCK_SIZE 16
 
+int count_intr(int* intr, int t1, int t2, int wI) {
+	int n = 0;
+	for (int i = 0; i < wI; i++) {
+		int x1 = (t1 * wI) + i;
+		if (intr[x1] == -1)
+			break;
+		
+		for (int j = 0; j < wI; j++) {
+			int x2 = (t2 * wI) + j;
+			if (intr[x2] == -1)
+				break;			
+			
+			if (intr[x1] == intr[x2])
+				n++;
+		}
+	}
+
+	return n;
+}
+
 void covariance(float* h_result, map<string, int> tokens, map<string, set<int> > intersections, int wK) {
 	Cuda_SAFE_CALL(cudaFree(0));
 	CUTimer *gpu_total_timer = start_timing("[GPU] Total Time");
-	CUTimer *mem_timer = start_timing("[GPU] Host→Device Memory Load");
+	CUTimer *mem_timer = start_timing("[GPU] Host-Device Memory Load");
 
 	int wT = tokens.size();
 	size_t mem_size_T = sizeof(int) * wT;
@@ -38,17 +58,28 @@ void covariance(float* h_result, map<string, int> tokens, map<string, set<int> >
 	}
 
 	index = 0;
-	size_t mem_size_I = sizeof(int) * wT * wI;
-	int* h_Intr = (int*) malloc(mem_size_I);
+	size_t mem_size_intr = sizeof(int) * wT * wI;
+	int* intr = (int*) malloc(mem_size_intr);
 	for (map<string, set<int> >::iterator it = intersections.begin(); it != intersections.end(); it++) {
 		set<int> tokenSet = (*it).second;
 		for (set<int>::iterator itt = tokenSet.begin(); itt != tokenSet.end(); itt++) {
-			h_Intr[index++] = *itt;
+			intr[index++] = *itt;
 		}
-		// pad with zeros
+		// pad with -1
 		if (tokenSet.size() < wI) {
 			for (int i = 0; i < wI - tokenSet.size(); i++)
-				h_Intr[index++] = -1;
+				intr[index++] = -1;
+		}
+	}
+	
+	unsigned int sizeT = wT * wT;
+	size_t mem_size_I = sizeof(int) * sizeT;
+	int* h_Intr = (int*) calloc(sizeT, mem_size_intr);
+	for (unsigned int i = 0; i<wT; i++) {
+		for (unsigned int j = 0; j < wT; j++) {
+			if (i != j && i < j) {
+				h_Intr[i + j * wT] = count_intr(intr, i, j, wI);
+			}
 		}
 	}
 	
@@ -58,9 +89,7 @@ void covariance(float* h_result, map<string, int> tokens, map<string, set<int> >
 
 	// allocate memory for the result
 	size_t mem_size_result = sizeof(float) * wT * wT;
-	//float* h_result = (float*) malloc(mem_size_result);
 	float* d_result;
-	//memset(h_result, 0, mem_size_result);
 	Cuda_SAFE_CALL(cudaMalloc((void **) &d_result, mem_size_result));
 	Cuda_SAFE_CALL(cudaMemset(d_result, 0, mem_size_result));
 
@@ -70,12 +99,12 @@ void covariance(float* h_result, map<string, int> tokens, map<string, set<int> >
 	dim3 threadsPerBlock(BLOCK_SIZE, BLOCK_SIZE);
 	dim3 numBlocks(wT / threadsPerBlock.x, wT / threadsPerBlock.y);
 
-	calc<<<numBlocks, threadsPerBlock>>>(d_result, d_Tokens, d_Intr, wT, wK, wI);
+	calc<<<numBlocks, threadsPerBlock, mem_size_result>>>(d_result, d_Tokens, d_Intr, wT, wK, wI);
 	cudaThreadSynchronize();
 	Cuda_CHECK_ERROR();
 	finish_timing(calculation_timer);
 
-	CUTimer *backcopy_timer = start_timing("[GPU] Device→Host Memory Fetch");
+	CUTimer *backcopy_timer = start_timing("[GPU] Device-Host Memory Fetch");
 	Cuda_SAFE_CALL(cudaMemcpy(h_result, d_result, mem_size_result, cudaMemcpyDeviceToHost));
 	
 	cudaFree(d_Tokens);
